@@ -2,6 +2,8 @@
 using Equinox.Infra.CrossCutting.Identity.Data;
 using Equinox.Infra.CrossCutting.Identity.Models;
 using Equinox.Infra.CrossCutting.IoC;
+using Equinox.Infra.CrossCutting.Logger;
+using Equinox.Infra.Data.Context;
 using Equinox.UI.Web.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -13,6 +15,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using Serilog.Enrichers.HttpContextData;
+using Serilog.Events;
 
 namespace Equinox.UI.Web
 {
@@ -30,6 +35,12 @@ namespace Equinox.UI.Web
         {
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+            //services.AddDbContext<EquinoxContext>(options =>
+            //    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+            //services.AddDbContext<EventStoreSQLContext>(options =>
+            //    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -58,6 +69,23 @@ namespace Equinox.UI.Web
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
+            // Create a settings instance
+            HttpContextDataLogFilterSettings settings = new HttpContextDataLogFilterSettings();
+
+            // Append full stack trace if enriched log event has an Exception object
+            settings.AppendFullStackTrace = true;
+
+            //Create the enricher 
+            var contextEnricher = new HttpContextDataEnricher(LogEventLevel.Information, settings);
+
+            LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
+                .ReadFrom.Configuration(Configuration)
+                .Enrich.WithHttpContextData()
+                //.Enrich.With(contextEnricher)
+                ;
+
+            services.AddSerilogServices(loggerConfiguration);
+
             services.AddAutoMapperSetup();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
@@ -76,6 +104,9 @@ namespace Equinox.UI.Web
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            //If you want to use the Middleware developed
+            app.UseMiddleware<SerilogMiddleware>();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
