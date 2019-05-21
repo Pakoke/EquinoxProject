@@ -8,7 +8,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace Equinox.Services.Api.Controllers
 {
@@ -23,12 +23,12 @@ namespace Equinox.Services.Api.Controllers
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             INotificationHandler<DomainNotification> notifications,
-            ILoggerFactory loggerFactory,
+            ILogger logger,
             IMediatorHandler mediator) : base(notifications, mediator)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _logger = loggerFactory.CreateLogger<AccountController>();
+            _logger = logger;
         }
 
         [HttpPost]
@@ -46,7 +46,7 @@ namespace Equinox.Services.Api.Controllers
             if (!result.Succeeded)
                 NotifyError(result.ToString(), "Login failure");
 
-            _logger.LogInformation(1, "User logged in.");
+            _logger.Information("User logged in.");
             return Response(model);
         }
 
@@ -71,7 +71,7 @@ namespace Equinox.Services.Api.Controllers
                 await _userManager.AddClaimAsync(user, new Claim("Customers", "Write"));
 
                 await _signInManager.SignInAsync(user, false);
-                _logger.LogInformation(3, "User created a new account with password.");
+                _logger.Information("User created a new account with password.");
                 return Response(model);
             }
 
