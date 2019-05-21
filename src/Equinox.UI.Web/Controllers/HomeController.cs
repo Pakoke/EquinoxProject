@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace Equinox.UI.Web.Controllers
 {
@@ -17,6 +18,11 @@ namespace Equinox.UI.Web.Controllers
         public IActionResult About()
         {
             ViewData["Message"] = "Your application description page.";
+
+            for (int i=0;i<1000 ; i++)
+            {
+                Log.Information("Get=About");
+            }
 
             return View();
         }
