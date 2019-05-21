@@ -3,7 +3,6 @@ using Equinox.Infra.CrossCutting.Identity.Data;
 using Equinox.Infra.CrossCutting.Identity.Models;
 using Equinox.Infra.CrossCutting.IoC;
 using Equinox.Infra.CrossCutting.Logger;
-using Equinox.Infra.Data.Context;
 using Equinox.UI.Web.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -16,8 +15,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using Serilog.Enrichers.HttpContextData;
-using Serilog.Events;
 
 namespace Equinox.UI.Web
 {
@@ -47,7 +44,8 @@ namespace Equinox.UI.Web
                 .AddDefaultTokenProviders();
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(o => {
+                .AddCookie(o =>
+                {
                     o.LoginPath = new PathString("/login");
                     o.AccessDeniedPath = new PathString("/home/access-denied");
                 })
@@ -69,18 +67,8 @@ namespace Equinox.UI.Web
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            // Create a settings instance
-            HttpContextDataLogFilterSettings settings = new HttpContextDataLogFilterSettings();
-
-            // Append full stack trace if enriched log event has an Exception object
-            settings.AppendFullStackTrace = true;
-
-            //Create the enricher 
-            var contextEnricher = new HttpContextDataEnricher(LogEventLevel.Information, settings);
-
             LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
                 .ReadFrom.Configuration(Configuration)
-                .Enrich.WithHttpContextData()
                 //.Enrich.With(contextEnricher)
                 ;
 
