@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using Serilog.Sinks.Loki;
 
 namespace Equinox.UI.Web
 {
@@ -67,9 +68,11 @@ namespace Equinox.UI.Web
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
+            var credentials = new NoAuthCredentials("http://localhost:3100");
+
             LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
                 .ReadFrom.Configuration(Configuration)
-                //.Enrich.With(contextEnricher)
+                .WriteTo.LokiHttp(credentials, new LogLabelProvider())
                 ;
 
             services.AddSerilogServices(loggerConfiguration);
